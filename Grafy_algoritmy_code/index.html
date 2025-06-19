@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Dijkstrův algoritmus – vizualizace</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 2rem;
+      background: #f9f9f9;
+    }
+    svg {
+      border: 1px solid #ccc;
+      background: white;
+    }
+    .node {
+      fill: #3498db;
+      stroke: #2980b9;
+      stroke-width: 2;
+    }
+    .edge {
+      stroke: #555;
+      stroke-width: 2;
+    }
+    .label {
+      font-size: 14px;
+      fill: #000;
+    }
+    .distances {
+      margin-top: 1rem;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dijkstrův algoritmus – vizualizace</h1>
+  <svg width="500" height="400" id="graph"></svg>
+  <div class="distances" id="output"></div>
+
+  <script>
+    const graph = {
+      A: [{ node: "B", weight: 4 }, { node: "C", weight: 2 }],
+      B: [{ node: "D", weight: 5 }],
+      C: [{ node: "B", weight: 1 }, { node: "D", weight: 8 }],
+      D: []
+    };
+
+    const positions = {
+      A: { x: 100, y: 100 },
+      B: { x: 300, y: 100 },
+      C: { x: 100, y: 250 },
+      D: { x: 300, y: 250 }
+    };
+
+    function dijkstra(graph, start) {
+      const distances = {};
+      const visited = new Set();
+      const queue = new PriorityQueue();
+
+      for (const node in graph) distances[node] = Infinity;
+      distances[start] = 0;
+      queue.enqueue(start, 0);
+
+      while (!queue.isEmpty()) {
+        const { node: current } = queue.dequeue();
+        if (visited.has(current)) continue;
+        visited.add(current);
+
+        for (const neighbor of graph[current]) {
+          const { node: next, weight } = neighbor;
+          const newDist = distances[current] + weight;
+          if (newDist < distances[next]) {
+            distances[next] = newDist;
+            queue.enqueue(next, newDist);
+          }
+        }
+      }
+
+      return distances;
+    }
+
+    class PriorityQueue {
+      constructor() {
+        this.values = [];
+      }
+      enqueue(node, priority) {
+        this.values.push({ node, priority });
+        this.values.sort((a, b) => a.priority - b.priority);
+      }
+      dequeue() {
+        return this.values.shift();
+      }
+      isEmpty() {
+        return this.values.length === 0;
+      }
+    }
+
+    function drawGraph(graph, positions) {
+      const svg = document.getElementById("graph");
+
+      // Draw edges
+      for (const from in graph) {
+        graph[from].forEach(({ node: to, weight }) => {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", positions[from].x);
+          line.setAttribute("y1", positions[from].y);
+          line.setAttribute("x2", positions[to].x);
+          line.setAttribute("y2", positions[to].y);
+          line.setAttribute("class", "edge");
+          svg.appendChild(line);
+
+          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          label.setAttribute("x", (positions[from].x + positions[to].x) / 2);
+          label.setAttribute("y", (positions[from].y + positions[to].y) / 2 - 5);
+          label.setAttribute("class", "label");
+          label.textContent = weight;
+          svg.appendChild(label);
+        });
+      }
+
+      // Draw nodes
+      for (const node in positions) {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", positions[node].x);
+        circle.setAttribute("cy", positions[node].y);
+        circle.setAttribute("r", 20);
+        circle.setAttribute("class", "node");
+        svg.appendChild(circle);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", positions[node].x);
+        text.setAttribute("y", positions[node].y + 5);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("class", "label");
+        text.textContent = node;
+        svg.appendChild(text);
+      }
+    }
+
+    function showDistances(distances) {
+      const output = document.getElementById("output");
+      output.innerHTML = "<strong>Nejkratší vzdálenosti z vrcholu A:</strong><br>";
+      for (const [node, dist] of Object.entries(distances)) {
+        output.innerHTML += `➤ ${node}: ${dist}<br>`;
+      }
+    }
+
+    // Spuštění
+    const result = dijkstra(graph, "A");
+    drawGraph(graph, positions);
+    showDistances(result);
+  </script>
+</body>
+</html>
